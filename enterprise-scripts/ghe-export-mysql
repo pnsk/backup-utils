@@ -1,0 +1,24 @@
+#!/bin/sh
+#/ Usage: ghe-export-mysql | ssh admin@enterprise -- ghe-import-mysql
+set -e
+
+# Show usage.
+if [ "$1" = "--help" ]
+then grep '^#/' <"$0" |cut -c 4-
+    exit 2
+fi
+
+[ "`whoami`" = "git" ] || {
+    exec sudo -u git "$0" "$@"
+    echo Run this script as the git user. >&2
+    exit 1
+}
+
+mysqldump \
+  -u root \
+  --hex-blob \
+  --single-transaction \
+  --quick \
+  --ignore-table github_enterprise.notification_deliveries
+  --ignore-table github_enterprise.notification_entries
+  github_enterprise
