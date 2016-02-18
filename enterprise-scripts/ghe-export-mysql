@@ -21,7 +21,7 @@ mysqldump \
   --quick \
   --ignore-table github_enterprise.notification_deliveries \
   --ignore-table github_enterprise.notification_entries \
-  github_enterprise; \
+  github_enterprise 
 
 mysqldump \
    -u root \
@@ -30,7 +30,7 @@ mysqldump \
    --quick \
    --no-create-db \ 
    --where="1 and notification_deliveries.delivered_at BETWEEN NOW() - INTERVAL 30 DAY AND NOW()" \
-   github_enterprise notification_deliveries; \
+   github_enterprise notification_deliveries
 
 mysqldump \
     -u root \ 
