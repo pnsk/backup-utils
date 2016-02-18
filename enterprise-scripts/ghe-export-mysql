@@ -19,6 +19,24 @@ mysqldump \
   --hex-blob \
   --single-transaction \
   --quick \
-  --ignore-table github_enterprise.notification_deliveries
-  --ignore-table github_enterprise.notification_entries
-  github_enterprise
+  --ignore-table github_enterprise.notification_deliveries \
+  --ignore-table github_enterprise.notification_entries \
+  github_enterprise; \
+
+mysqldump \
+   -u root \
+   --hex-blob \ 
+   --single-transaction \
+   --quick \
+   --no-create-db \ 
+   --where="1 and notification_deliveries.delivered_at BETWEEN NOW() - INTERVAL 30 DAY AND NOW()" \
+   github_enterprise notification_deliveries; \
+
+mysqldump \
+    -u root \ 
+    --hex-blob \ 
+    --single-transaction \ 
+    --quick \
+    --no-create-db \
+    --where="1 and notification_entries.updated_at BETWEEN NOW() - INTERVAL 30 DAY AND NOW()" \
+    github_enterprise notification_entries
