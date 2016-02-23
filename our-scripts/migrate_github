@@ -1,15 +1,14 @@
 #!/bin/sh
 
 LANG=C
-MAILADDR="taniguchi.takanori@dena.jp"
 BACKUP_UTIL_DIR="$HOME/backup-utils"
 WORKHOST=`hostname -s`
 
-AUTO=YES
+AUTO=NO
 MAINTENACE_SRC=OFF
 MAINTENACE_DIST=ON
 DO_BACKUP=YES
-DO_RESTORE=YES
+DO_RESTORE=NO
 
 if [ -f "${BACKUP_UTIL_DIR}/backup.config" ]; then
 	. "${BACKUP_UTIL_DIR}/backup.config"
