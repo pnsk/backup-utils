@@ -31,7 +31,7 @@ _ghe_backup() {
         sleep 5
     fi
     echo "`date`: Start backup at ${GHE_HOSTNAME}:Rsync speed limit: ${BK_LIMIT:-NO_Limit}" >> $LOGFILE
-    time "${BACKUP_UTIL_DIR}/bin/ghe-backup" -v | ts >>  $LOGFILE 2>&1
+    time "${BACKUP_UTIL_DIR}/bin/ghe-backup" -v 2>&1 | ts >>  $LOGFILE 
     if [ ${MAINTENACE_SRC:-OFF} = ON ]; then
 #        echo "`date`: Unset maintenance mode off at ${GHE_HOSTNAME}" >> $LOGFILE
 #        ssh admin@${GHE_HOSTNAME} ghe-maintenance -u
@@ -58,7 +58,7 @@ _ghe_restore() {
     ssh -p 122 admin@${GHE_RESTORE_HOST} ghe-maintenance -s
     sleep 5
     echo "`date`: Start restoring to ${GHE_RESTORE_HOST}:Rsync Speed Limit: ${RESTORE_LIMIT:-NO_Limit}" >> $LOGFILE
-    time "${BACKUP_UTIL_DIR}/bin/ghe-restore" -v -f ${GHE_RESTORE_HOST}  | ts >> $LOGFILE 2>&1
+    time "${BACKUP_UTIL_DIR}/bin/ghe-restore" -v -f ${GHE_RESTORE_HOST}  2>&1 | ts >> $LOGFILE 
 #   time "${BACKUP_UTIL_DIR}/bin/ghe-restore" -v -s truncate-notification-deliveries-test -f ${GHE_RESTORE_HOST}
     #echo "`date`: Unset maintenance mode on at ${GHE_RESTORE_HOST}" >> $LOGFILE
     # ssh -p 122 admin@${GHE_RESTORE_HOST} ghe-maintenance -u
@@ -125,9 +125,5 @@ if [ ${DO_RESTORE:-no} = YES ]; then
 		exit 1
 	fi
 
-	#sh ./remove_notification.sh
 	_ghe_restore
 fi
-
-# time env GHE_SNAPSHOT_TIMESTAMP=current ./bin/ghe-backup
-# export GHE_SNAPSHOT_TIMESTAMP=`ls -1 data/ | tail -n1`
