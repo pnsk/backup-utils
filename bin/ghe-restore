@@ -193,7 +193,7 @@ if ! $cluster; then
 fi
 
 echo "Restoring MySQL database ..."
-gzip -dc "$GHE_RESTORE_SNAPSHOT_PATH/mysql.sql.gz" | ghe-ssh "$GHE_HOSTNAME" -- 'ghe-import-mysql'
+cat "$GHE_RESTORE_SNAPSHOT_PATH/mysql.sql.gz" | ssh -l admin -p 122 -o BatchMode=yes "$GHE_RESTORE_HOST" -- 'gzip -dc | ghe-import-mysql' 1>&3
 
 echo "Restoring Redis database ..."
 ghe-ssh "$GHE_HOSTNAME" -- 'ghe-import-redis' < "$GHE_RESTORE_SNAPSHOT_PATH/redis.rdb" 1>&3

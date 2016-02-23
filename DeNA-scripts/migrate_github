@@ -1,0 +1,134 @@
+#!/bin/sh
+
+LANG=C
+MAILADDR="taniguchi.takanori@dena.jp"
+BACKUP_UTIL_DIR="$HOME/backup-utils"
+WORKHOST=`hostname -s`
+
+AUTO=YES
+MAINTENACE_SRC=OFF
+MAINTENACE_DIST=ON
+DO_BACKUP=YES
+DO_RESTORE=YES
+
+if [ -f "${BACKUP_UTIL_DIR}/backup.config" ]; then
+	. "${BACKUP_UTIL_DIR}/backup.config"
+else
+	echo "Not found: ${BACKUP_UTIL_DIR}/backup.config"
+	echo "Abort."
+	exit 1
+fi
+
+_ghe_backup() {
+    LOGFILE=/tmp/_ghe_backup.`uuidgen`
+    MAILBODY=${LOGFILE}_mail
+    SPEED_LIMIT=${BK_LIMIT:-""}
+    export SPEED_LIMIT
+    
+    echo $LOGFILE
+    if [ ${MAINTENACE_SRC:-OFF} = ON ]; then
+        echo "`date`: Set maintenance mode on at ${GHE_HOSTNAME}" >> $LOGFILE
+        ssh admin@${GHE_HOSTNAME} ghe-maintenance -s
+        sleep 5
+    fi
+    echo "`date`: Start backup at ${GHE_HOSTNAME}:Rsync speed limit: ${BK_LIMIT:-NO_Limit}" >> $LOGFILE
+    time "${BACKUP_UTIL_DIR}/bin/ghe-backup" -v | ts >>  $LOGFILE 2>&1
+    if [ ${MAINTENACE_SRC:-OFF} = ON ]; then
+#        echo "`date`: Unset maintenance mode off at ${GHE_HOSTNAME}" >> $LOGFILE
+#        ssh admin@${GHE_HOSTNAME} ghe-maintenance -u
+         echo "`date`: done (Maintenance mode keep on)." >> $LOGFILE
+    fi
+    echo "`date`: done." >> $LOGFILE
+    if [ ${MAILADDR:-X} != X ]; then
+	echo $LOGFILE > $MAILBODY
+	head -1 $LOGFILE >> $MAILBODY
+	tail -1 $LOGFILE >> $MAILBODY
+    	cat $MAILBODY | mail -s "ghe-backup of ${GHE_HOSTNAME}: $WORKHOST" -r $MAILADDR $MAILADDR
+    fi
+    echo $LOGFILE
+}
+
+_ghe_restore() {
+    LOGFILE=/tmp/_ghe_restore.`uuidgen`
+    MAILBODY=${LOGFILE}_mail
+    SPEED_LIMIT=${RESTORE_LIMIT:-""}
+    export SPEED_LIMIT
+
+    echo $LOGFILE
+    echo "`date`: Set maintenance mode on at ${GHE_RESTORE_HOST}" >> $LOGFILE
+    ssh -p 122 admin@${GHE_RESTORE_HOST} ghe-maintenance -s
+    sleep 5
+    echo "`date`: Start restoring to ${GHE_RESTORE_HOST}:Rsync Speed Limit: ${RESTORE_LIMIT:-NO_Limit}" >> $LOGFILE
+    time "${BACKUP_UTIL_DIR}/bin/ghe-restore" -v -f ${GHE_RESTORE_HOST}  | ts >> $LOGFILE 2>&1
+#   time "${BACKUP_UTIL_DIR}/bin/ghe-restore" -v -s truncate-notification-deliveries-test -f ${GHE_RESTORE_HOST}
+    #echo "`date`: Unset maintenance mode on at ${GHE_RESTORE_HOST}" >> $LOGFILE
+    # ssh -p 122 admin@${GHE_RESTORE_HOST} ghe-maintenance -u
+    echo "`date`: done (Maintenance mode keep on)." >> $LOGFILE
+    if [ ${MAILADDR:-X} != X ]; then
+	echo $LOGFILE > $MAILBODY
+	head -1 $LOGFILE >> $MAILBODY
+	tail -1 $LOGFILE >> $MAILBODY
+        cat $MAILBODY | mail -s "ghe-restore of ${GHE_RESTORE_HOST}: $WORKHOST" -r $MAILADDR $MAILADDR
+    fi
+    echo $LOGFILE
+}
+
+if [ ${DO_BACKUP:-no} = YES ]; then
+	echo "Backup Server is ${GHE_HOSTNAME}."
+	MSG="I will get backup of ${GHE_HOSTNAME}. "
+	echo "rsync Bandwidth is $BLIMIT Mbps ($BK_LIMIT)"
+fi
+
+if [ ${DO_RESTORE:-no} = YES ]; then
+	echo "Distinate new server is ${GHE_RESTORE_HOST}."
+	if [ ${DO_BACKUP:-no} = YES ]; then MSG="${MSG}And then " ;fi
+	MSG="${MSG}I will restore onto ${GHE_RESTORE_HOST}"
+	echo "rsync Bandwidth is $RLIMIT Mbps ($RESTORE_LIMIT)"
+fi
+
+if [ "${MSG:-no}" = no ]; then 
+	echo "Do nothing!."
+	exit 0 
+fi
+
+if [ ${AUTO:-NO} != YES ]; then
+echo -n "Is this OK? [y/n] "
+while read ANS
+do
+	case $ANS in
+	[Yy] )
+		break
+		;;
+	[Nn] )
+		exit 0
+		;;
+	*)
+                echo "Is this OK? [y/n]"
+		;;
+	esac
+done
+fi
+
+if [ ${DO_BACKUP:-no} = YES ]; then
+	"${BACKUP_UTIL_DIR}/bin/ghe-host-check" ${GHE_HOSTNAME} > /dev/null 
+	if [ $? -ne 0 ]; then
+		echo "\nAbort."
+		exit 1
+	fi
+	_ghe_backup
+	sleep 5
+fi
+
+if [ ${DO_RESTORE:-no} = YES ]; then
+	"${BACKUP_UTIL_DIR}/bin/ghe-host-check" ${GHE_RESTORE_HOST} > /dev/null
+	if [ $? -ne 0 ]; then
+		echo "\nAbort."
+		exit 1
+	fi
+
+	#sh ./remove_notification.sh
+	_ghe_restore
+fi
+
+# time env GHE_SNAPSHOT_TIMESTAMP=current ./bin/ghe-backup
+# export GHE_SNAPSHOT_TIMESTAMP=`ls -1 data/ | tail -n1`
