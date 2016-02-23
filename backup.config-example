@@ -33,6 +33,8 @@ GHE_NUM_SNAPSHOTS=10
 #
 #
 
+MAILADDR="root@localhost"
+
 # Rsync backup bandwidth limit
 BLIMIT=85
 # # Rsync restore bandwidth limit
