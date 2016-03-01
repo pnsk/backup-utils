@@ -260,7 +260,6 @@ rsync_repository_data <<RULES
 - /__nodeload_archives__/
 - /__gitmon__/
 - /__render__/
-- /__hookshot__/logs/*
 + /__*__/
 + /__*__/**
 + /info/
