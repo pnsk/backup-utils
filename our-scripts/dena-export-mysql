@@ -35,6 +35,7 @@ mysqldump \
   --no-create-db \
   --ignore-table=github_enterprise.notification_deliveries \
   --ignore-table=github_enterprise.notification_entries \
+  --ignore-table=github_enterprise.stratocaster_events \
   github_enterprise
 
 
@@ -57,3 +58,14 @@ mysqldump \
    --no-create-db \
    --where="1 and notification_entries.updated_at BETWEEN NOW() - INTERVAL 30 DAY AND NOW()" \
   github_enterprise notification_entries
+
+mysqldump \
+   -u root \
+   --hex-blob \
+   --single-transaction \
+   --quick \
+   --no-create-info \
+   --no-create-db \
+   --where="1 and stratocaster_events.updated_at BETWEEN NOW() - INTERVAL 30 DAY AND NOW()" \
+  github_enterprise stratocaster_events
+
