@@ -1,0 +1,71 @@
+#!/bin/sh
+#/ Usage: ghe-export-mysql | ssh admin@enterprise -- ghe-import-mysql
+set -e
+
+# Show usage.
+if [ "$1" = "--help" ]
+then grep '^#/' <"$0" |cut -c 4-
+    exit 2
+fi
+
+[ "`whoami`" = "git" ] || {
+    exec sudo -u git "$0" "$@"
+    echo Run this script as the git user. >&2
+    exit 1
+}
+
+mysqldump \
+  -u root \
+  --hex-blob \
+  --single-transaction \
+  --quick \
+  --no-data \
+  github_enterprise
+
+echo "--"
+echo "-- Dumping all of table data"
+echo "--"
+
+mysqldump \
+  -u root \
+  --hex-blob \
+  --single-transaction \
+  --quick \
+  --no-create-info \
+  --no-create-db \
+  --ignore-table=github_enterprise.notification_deliveries \
+  --ignore-table=github_enterprise.notification_entries \
+  --ignore-table=github_enterprise.stratocaster_events \
+  github_enterprise
+
+
+mysqldump \
+  -u root \
+  --hex-blob \
+  --single-transaction \
+  --quick \
+  --no-create-info \
+  --no-create-db \
+  --where="1 and notification_deliveries.delivered_at BETWEEN NOW() - INTERVAL 30 DAY AND NOW()" \
+  github_enterprise notification_deliveries
+
+mysqldump \
+   -u root \
+   --hex-blob \
+   --single-transaction \
+   --quick \
+   --no-create-info \
+   --no-create-db \
+   --where="1 and notification_entries.updated_at BETWEEN NOW() - INTERVAL 30 DAY AND NOW()" \
+  github_enterprise notification_entries
+
+mysqldump \
+   -u root \
+   --hex-blob \
+   --single-transaction \
+   --quick \
+   --no-create-info \
+   --no-create-db \
+   --where="1 and stratocaster_events.updated_at BETWEEN NOW() - INTERVAL 30 DAY AND NOW()" \
+  github_enterprise stratocaster_events
+

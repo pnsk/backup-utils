@@ -30,3 +30,26 @@ GHE_NUM_SNAPSHOTS=10
 # Add s3 bucket for configuring which bucket to use in ghe-s3-backup and
 # ghe-s3-restore
 # GHE_S3_BUCKET=""
+#
+#
+
+MAILADDR="root@localhost"
+
+# Rsync backup bandwidth limit
+BLIMIT=85
+# # Rsync restore bandwidth limit
+RLIMIT=85
+
+if [ ${BLIMIT-0} -ne 0 ]; then
+       B=`echo "scale=5; $BLIMIT / 8 * 1024" | bc | awk -F. '{print $1}'`
+       BK_LIMIT="--bwlimit=$B"
+else
+       BK_LIMIT=""
+fi
+
+if [ ${RLIMIT-0} -ne 0 ]; then
+       R=`echo "scale=5; $RLIMIT / 8 * 1024" | bc | awk -F. '{print $1}'`
+       RESTORE_LIMIT="--bwlimit=$R"
+else
+       RESTORE_LIMIT=""
+fi

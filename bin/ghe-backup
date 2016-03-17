@@ -133,9 +133,11 @@ echo "Backing up SSH host keys ..."
 ghe-ssh "$GHE_HOSTNAME" -- 'ghe-export-ssh-host-keys' > ssh-host-keys.tar ||
 failures="$failures ssh-host-keys"
 
-echo "Backing up MySQL database ..."
-echo 'set -o pipefail; ghe-export-mysql | gzip' |
-ghe-ssh "$GHE_HOSTNAME" -- /bin/bash > mysql.sql.gz ||
+#echo "Backing up MySQL database ..."
+#echo 'set -o pipefail; ghe-export-mysql | gzip --fast' |
+echo "Backing up MySQL database ...(use dena-export-mysql)"
+echo 'set -o pipefail; dena-export-mysql | gzip --fast' |
+ghe-ssh "$GHE_HOSTNAME" -- /bin/bash | pv -L 9m  > mysql.sql.gz ||
 failures="$failures mysql"
 
 echo "Backing up Redis database ..."
